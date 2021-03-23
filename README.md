@@ -34,3 +34,15 @@ This is implemented in timerred.go
 It creates a single table with receiptHandle as key.
 Added expire time in seconds into an index. Expiry process uses this index to find the entries.
   - Redis transaction can be used to 
+
+# Performance
+| User time | ms | requests | ms per 100 req | method |
+| ---|---:|---:|---:|:---:|
+| 2.47|985|1000000|0.099|Go map with lock |
+|   |299|483533|0.062|    |
+|   |   |      |     |    |
+|30.15| 27588 | 1000000 | 2.759 | buntDB disk |
+|   | 1581 | 66204 | 2.388 |   |
+|    |   |   |    |  |
+|27.55 | 18606 | 1000000 | 1.861 | buntDB memory |
+|   | 1719 | 92640 | 1.856 |  |
