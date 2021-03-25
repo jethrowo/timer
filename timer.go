@@ -26,6 +26,7 @@ type timer struct {
 	total     int
 	delC      int
 	expC      int
+	avg       time.Duration
 }
 
 func (t *timer) InitTimer() *timer {
@@ -35,6 +36,7 @@ func (t *timer) InitTimer() *timer {
 	t.total = 0
 	t.delC = 0
 	t.expC = 0
+	t.avg = 0
 
 	return t
 }
@@ -85,6 +87,7 @@ func (t *timer) TickProcess() {
 	// run every seconds
 	lastT := time.Now().Unix() - 5
 	for {
+		st := time.Now()
 		now := time.Now().Unix()
 		for i := lastT; i <= now; i++ {
 			t.lock.Lock()
@@ -105,6 +108,8 @@ func (t *timer) TickProcess() {
 			}
 			t.lock.Unlock()
 		}
+		ed := time.Now()
+		t.avg = (t.avg + ed.Sub(st)) / 2
 
 		lastT = now + 1
 
@@ -122,6 +127,7 @@ func (t *timer) PrintTimer() {
 		fmt.Printf("\n")
 	}
 	fmt.Printf("Total created: %v, expired: %v, canceled: %v\n", t.total, t.expC, t.delC)
+	fmt.Printf("Average tick process time: %v\n", t.avg)
 }
 
 func (t *timer) CloseTimer() {
