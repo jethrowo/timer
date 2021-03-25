@@ -15,12 +15,14 @@ type timerDB struct {
 	total int
 	delC  int
 	expC  int
+	avg   time.Duration
 }
 
 func (t *timerDB) InitTimer() *timerDB {
 	var err error
-	t = &timerDB{nil, 0, 0, 0}
+	t = &timerDB{nil, 0, 0, 0, 0}
 	t.db, err = buntdb.Open("data.db")
+	// t.db, err = buntdb.Open(":memory:")
 	t.db.CreateIndex("timer", "*", buntdb.IndexJSON("Timeout"))
 	if err != nil {
 		fmt.Printf("%v\n", err)
@@ -72,10 +74,11 @@ func (t *timerDB) StopTimer(receiptHandle string) error {
 func (t *timerDB) TickProcess() {
 	// run every seconds
 	for {
+		st := time.Now()
 		now := time.Now().Unix() + 1
 		delTo := fmt.Sprintf(`{"Timeout":%d}`, now)
 		var delkeys []string
-		t.db.View(func(tx *buntdb.Tx) error {
+		t.db.Update(func(tx *buntdb.Tx) error {
 			tx.AscendLessThan("timer", delTo, func(key, value string) bool {
 				var data msgMeta
 				if err := json.Unmarshal([]byte(value), &data); err != nil {
@@ -88,10 +91,7 @@ func (t *timerDB) TickProcess() {
 				// fmt.Printf("expire timer: %s - %v\n", key, value)
 				return true
 			})
-			return nil
-		})
 
-		t.db.Update(func(tx *buntdb.Tx) error {
 			var err error
 			for _, k := range delkeys {
 				if _, err = tx.Delete(k); err != nil {
@@ -103,6 +103,8 @@ func (t *timerDB) TickProcess() {
 			}
 			return err
 		})
+		ed := time.Now()
+		t.avg = (t.avg + ed.Sub(st)) / 2
 
 		time.Sleep(1 * time.Second)
 	}
@@ -118,6 +120,7 @@ func (t *timerDB) PrintTimer() {
 		return nil
 	})
 	fmt.Printf("Total created: %v, expired: %v, canceled: %v\n", t.total, t.expC, t.delC)
+	fmt.Printf("Average tick process time: %v\n", t.avg)
 }
 
 func (t *timerDB) CloseTimer() {

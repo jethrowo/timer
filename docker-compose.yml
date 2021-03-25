@@ -1,0 +1,13 @@
+# centos 7 in the ci servers only supports docker-compose 1.18
+version: "2.3"
+services:
+  redis:
+    image: redis
+    # command: --appendonly yes
+    ports: 
+     - "6379:6379"
+    volumes:
+     - .:/data
+
+volumes:
+  redis_config:
