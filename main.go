@@ -20,7 +20,7 @@ func tryoutTimer(timert interface{}) {
 	var s [sample]sampleData
 	rand.Seed(time.Now().UnixNano())
 	for j := 0; j < sample; j++ {
-		sample_data := rand.Intn(20) + 1
+		sample_data := rand.Intn(80) + 1
 		s[j].h = base64.StdEncoding.EncodeToString([]byte(time.Now().String()))
 		s[j].t = sample_data
 	}
@@ -33,18 +33,18 @@ func tryoutTimer(timert interface{}) {
 			return
 		}
 	*/
-	ti, ok := timert.(*timerDB)
-	if !ok {
-		fmt.Printf("Wrong data type!\n")
-		return
-	}
 	/*
-		ti, ok := timert.(*timerRedis)
+		ti, ok := timert.(*timerDB)
 		if !ok {
 			fmt.Printf("Wrong data type!\n")
 			return
 		}
 	*/
+	ti, ok := timert.(*timerRedis)
+	if !ok {
+		fmt.Printf("Wrong data type!\n")
+		return
+	}
 
 	ti = ti.InitTimer()
 	go ti.TickProcess()
@@ -53,14 +53,12 @@ func tryoutTimer(timert interface{}) {
 	// start all sample timer
 	cur := time.Now()
 	for i := 0; i < sample; i++ {
-		// var s string
-		// s = fmt.sprintf("abc%d", i)
 		ti.StartTimer(s[i].h, s[i].t, mm)
 	}
 	end := time.Now()
 	fmt.Printf("Create %d timer used %v\n", sample, end.Sub(cur))
 	// wait a while for some timer to expire
-	time.Sleep(10 * time.Second)
+	time.Sleep(20 * time.Second)
 	// cancel all rest timer
 	cur = time.Now()
 	for i := 0; i < sample; i++ {
@@ -79,9 +77,9 @@ func tryoutTimer(timert interface{}) {
 }
 
 func main() {
-	var t *timerDB
+	// var t *timerDB
 	// var t *timer
-	// var t *timerRedis
+	var t *timerRedis
 
 	tryoutTimer(t)
 }
