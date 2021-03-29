@@ -8,6 +8,8 @@ The expiry processing uses secondary key to sort all entries. Each second it pro
 
 Any system support multiple key index can be used to implement this timer system.
 
+In the sample code, each implementation has exactly same interfaces (start timer, stop timer, timer expiry process) just with a struct to present different underlayer design. In the main function, simply replace the variable with different struct type will run the different implementation.
+
 ### **Implementation with GO's map**
 
 This is implemented in timer.go
