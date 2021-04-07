@@ -41,6 +41,9 @@ Redis pipeline transaction is used to provide atomic operation. Redis client on 
   - Not using Redis key timeout feature, no need to register to timeout public event subject. No need to worry about lost event.
   - Slow compare to the other two. Use concurrent GOLAN routine to improve the performance. Redis is good at process large number of concurrent requests. Since timer program is a single client, limited by max connections per client. If there're are multiple timer processes, the performance could be improved.
 
+### **Timewheel based implementation with Kafka persistence**
+This change implements a hierarchical timerwheel, and uses kafka to persist events. The timert interface is currently quite synchronous, and as a result, the timer returns from most actions before ensuring that the changes are persisted to kafka. If we wish to be more safe around persistence (ie return a promise or accept callback to check for errors in persistance), we'll need to introduce a more asynchronous interface, and scale writers/partitions to maximize throughput.
+
 # Performance
 Performance testing created 1,000,000 timers. Each timer set a random expire second. Part of timer will be expired during the testing. The rest of timer will be canceled before testing finish. Data collected during the testing: total time used for creating all timers (avg to "µs per request"), total time used for cancel all timer, average each tick process time (each tick is one second, the processing time should not exceed 1 second, otherwise the timeout will not accurate. From table, all methods can easily achieve that).
 
@@ -63,3 +66,6 @@ Performance testing created 1,000,000 timers. Each timer set a random expire sec
 |   |   |   |  |
 | Redis without persistent | 130 | add timer: 49 | avg tick process: 8 ms, max 346 ms |
 |    |    | del timer: 40 |  |
+|   |   |   |  |
+| Hierarchical timerwheel with Kafka persistence |  | add timer: 22 | avg tick process: 66.571µs, max: 7.6804ms |
+|    |    | del timer: 9 |  |
