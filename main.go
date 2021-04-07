@@ -12,9 +12,18 @@ type sampleData struct {
 	t int
 }
 
+type timert interface {
+	InitTimer() timert
+	StartTimer(receiptHandle string, timeout0 int, metadata msgMeta) error
+	StopTimer(receiptHandle string) error
+	TickProcess()
+	PrintTimer()
+	CloseTimer()
+}
+
 const sample = 1000000
 
-func tryoutTimer(timert interface{}) {
+func tryoutTimer(ti timert) {
 	// generate sample data for testing. receiptHandle is base64 encoding
 	// timeout value is random value between 1~21
 	var s [sample]sampleData
@@ -23,27 +32,6 @@ func tryoutTimer(timert interface{}) {
 		sample_data := rand.Intn(80) + 1
 		s[j].h = base64.StdEncoding.EncodeToString([]byte(time.Now().String()))
 		s[j].t = sample_data
-	}
-
-	// init timer, start tick process
-	/*
-		ti, ok := timert.(*timer)
-		if !ok {
-			fmt.Printf("Wrong data type!\n")
-			return
-		}
-	*/
-	/*
-		ti, ok := timert.(*timerDB)
-		if !ok {
-			fmt.Printf("Wrong data type!\n")
-			return
-		}
-	*/
-	ti, ok := timert.(*timerRedis)
-	if !ok {
-		fmt.Printf("Wrong data type!\n")
-		return
 	}
 
 	ti = ti.InitTimer()
@@ -79,7 +67,8 @@ func tryoutTimer(timert interface{}) {
 func main() {
 	// var t *timerDB
 	// var t *timer
-	var t *timerRedis
+	// var t *timerRedis
+	var t *timerwheel
 
 	tryoutTimer(t)
 }
