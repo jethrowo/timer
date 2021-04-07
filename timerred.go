@@ -25,7 +25,7 @@ type timerRedis struct {
 	lock  sync.Mutex    // lock used to protect counters during concurrent process
 }
 
-func (t *timerRedis) InitTimer() *timerRedis {
+func (t *timerRedis) InitTimer() timert {
 	t = &timerRedis{
 		rdb:   nil,
 		ctx:   context.Background(),
@@ -91,6 +91,7 @@ func (t *timerRedis) TickProcess() {
 	// set initial value, this can be saved to a config and read each time it restart
 	lastT := time.Now().Unix() - 5
 	// run every seconds
+	var n time.Duration = 0
 	for {
 		st := time.Now()
 		now := time.Now().Unix()
@@ -137,20 +138,16 @@ func (t *timerRedis) TickProcess() {
 			}
 		}
 		// Calculate the time used to process in this round
-		ed := time.Now()
 		if p {
-			delta := ed.Sub(st)
+			delta := time.Since(st)
 			if delta < t.min {
 				t.min = delta
 			}
 			if delta > t.max {
 				t.max = delta
 			}
-			if t.avg == 0 {
-				t.avg = delta
-			} else {
-				t.avg = (t.avg + delta) / 2
-			}
+			n += 1
+			t.avg = (delta-t.avg)/n + t.avg
 		}
 
 		lastT = now

@@ -18,7 +18,7 @@ type timerDB struct {
 	avg   time.Duration
 }
 
-func (t *timerDB) InitTimer() *timerDB {
+func (t *timerDB) InitTimer() timert {
 	var err error
 	t = &timerDB{nil, 0, 0, 0, 0}
 	t.db, err = buntdb.Open("data.db")
@@ -72,6 +72,7 @@ func (t *timerDB) StopTimer(receiptHandle string) error {
 }
 
 func (t *timerDB) TickProcess() {
+	var n time.Duration = 0
 	// run every seconds
 	for {
 		st := time.Now()
@@ -103,8 +104,9 @@ func (t *timerDB) TickProcess() {
 			}
 			return err
 		})
-		ed := time.Now()
-		t.avg = (t.avg + ed.Sub(st)) / 2
+		delta := time.Since(st)
+		n += 1
+		t.avg = (delta-t.avg)/n + t.avg
 
 		time.Sleep(1 * time.Second)
 	}
