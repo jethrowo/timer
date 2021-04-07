@@ -29,7 +29,7 @@ type timer struct {
 	avg       time.Duration
 }
 
-func (t *timer) InitTimer() *timer {
+func (t *timer) InitTimer() timert {
 	t = &timer{}
 	t.msgQueue = make(map[string]msgMeta)
 	t.timeQueue = make(map[int64]handleList)
@@ -86,6 +86,7 @@ func (t *timer) StopTimer(receiptHandle string) error {
 func (t *timer) TickProcess() {
 	// run every seconds
 	lastT := time.Now().Unix() - 5
+	var n time.Duration = 0
 	for {
 		st := time.Now()
 		now := time.Now().Unix()
@@ -108,8 +109,9 @@ func (t *timer) TickProcess() {
 			}
 			t.lock.Unlock()
 		}
-		ed := time.Now()
-		t.avg = (t.avg + ed.Sub(st)) / 2
+		n += 1
+		delta := time.Since(st)
+		t.avg = (delta-t.avg)/n + t.avg
 
 		lastT = now + 1
 
