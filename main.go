@@ -66,9 +66,9 @@ func tryoutTimer(ti timert) {
 
 func main() {
 	// var t *timerDB
-	// var t *timer
+	var t *timer
 	// var t *timerRedis
-	var t *timerwheel
+	// var t *timerwheel
 
 	tryoutTimer(t)
 }

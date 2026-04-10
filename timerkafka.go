@@ -57,7 +57,7 @@ func KafkaPersist(ctx context.Context, kafkaAddr net.Addr, kafkaTopic string) ch
 		panic(fmt.Errorf("kafka controller: %w", err))
 	}
 	conn.Close()
-	conn, err = kafka.Dial("tcp", fmt.Sprintf("%s:%d", ctlr.Host, ctlr.Port))
+	conn, err = kafka.Dial("tcp", fmt.Sprintf("%s:%d", "localhost", ctlr.Port))
 	if err != nil {
 		panic(fmt.Errorf("kafka dial controller: %w", err))
 	}
@@ -111,14 +111,15 @@ func KafkaPersist(ctx context.Context, kafkaAddr net.Addr, kafkaTopic string) ch
 				} else {
 					close(ev.Committed)
 				}
-				msgs = append(msgs, kafka.Message{Value: val})
+				msgs = append(msgs, kafka.Message{Topic: kafkaTopic, Value: val})
 			}
 		}
 	}()
 	go func() {
-		writer := kafka.Writer{
-			Addr:  kafkaAddr,
-			Topic: kafkaTopic,
+		writer := &kafka.Writer{
+			Addr: kafka.TCP("localhost:9092"),
+			// Topic:    kafkaTopic,
+			Balancer: &kafka.LeastBytes{},
 		}
 		for {
 			select {
@@ -129,10 +130,14 @@ func KafkaPersist(ctx context.Context, kafkaAddr net.Addr, kafkaTopic string) ch
 					time.Sleep(500 * time.Millisecond)
 				}
 
-				err := writer.WriteMessages(ctx, msgs...)
-				if err != nil {
-					panic(err)
-				}
+				/*
+					err := writer.WriteMessages(ctx, msgs...)
+					if err != nil {
+						panic(err)
+					}
+				*/
+				writer.WriteMessages(ctx, kafka.Message{})
+				// time.Sleep(2 * time.Millisecond)
 			}
 		}
 	}()
@@ -155,7 +160,7 @@ func (t *timerwheel) InitTimer() timert {
 	for i := 0; i < MaxHours; i++ {
 		t.th[i] = make([]timerID, 0)
 	}
-	t.Persist = KafkaPersist(t.ctx, kafka.TCP("kafka:9092"), "perf-"+time.Now().Format("20060102150405"))
+	t.Persist = KafkaPersist(t.ctx, kafka.TCP("localhost:9092"), "perf-"+time.Now().Format("20060102150405"))
 
 	return t
 }
@@ -310,12 +315,12 @@ func (t *timerwheel) PrintTimer() {
 	}
 	fmt.Printf("Total created: %d, expired: %d, canceled: %d\n", t.startC, t.expC, t.stopC)
 	if len(t.processTime) > 0 {
-		avg := float64(0)
-		n := float64(len(t.processTime))
+		avg := time.Duration(0)
+		// n := float64(len(t.processTime))
 		min := time.Duration((1 << 63) - 1)
 		max := time.Duration(0)
-		for _, pt := range t.processTime {
-			avg += float64(pt) / n
+		for i, pt := range t.processTime {
+			avg = (pt-avg)/time.Duration(i+1) + avg
 			if pt > max {
 				max = pt
 			}
